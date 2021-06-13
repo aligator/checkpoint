@@ -35,13 +35,13 @@ func IgnoreEOF() Option {
 //
 // This can be used to define special error handling for special errors
 // such as io.EOF.
-type Option = func (err error) error
+type Option = func(err error) error
 
 // From just wraps an error by a new Checkpoint which adds some caller information to the error.
 // It returns nil, if err == nil.
 // You may use Options to change the resulting error for some specific input-errors.
 // (Such as IgnoreEOF for special EOF handling)
-func From(err error, options... Option) error {
+func From(err error, options ...Option) error {
 	for _, o := range options {
 		if newErr := o(err); newErr != nil {
 			return newErr
@@ -91,7 +91,7 @@ func From(err error, options... Option) error {
 //  }
 // but also for the error returned by somethingOtherThatThrowsErrors() (if you know what error it is).
 // If the error in this example is nil, no Checkpoint gets created.
-func Wrap(prev, err error, options... Option) error {
+func Wrap(prev, err error, options ...Option) error {
 	for _, o := range options {
 		if newErr := o(err); newErr != nil {
 			return newErr
@@ -125,11 +125,14 @@ type Checkpoint struct {
 }
 
 func (e Checkpoint) Error() string {
-	// Use different formatting for the prev error if it was not also a Checkpoint.
-	prevErrString := e.prev.Error()
-	_, ok := e.prev.(*Checkpoint)
-	if !ok {
-		prevErrString = "File: unknown\n\t" + strings.ReplaceAll(prevErrString, "\n", "\n\t")
+	prevErrString := ""
+	if e.prev != nil {
+		// Use different formatting for the prev error if it was not also a Checkpoint.
+		prevErrString = e.prev.Error()
+		_, ok := e.prev.(*Checkpoint)
+		if !ok {
+			prevErrString = "File: unknown\n\t" + strings.ReplaceAll(prevErrString, "\n", "\n\t")
+		}
 	}
 
 	// Format different based on existing caller information.
