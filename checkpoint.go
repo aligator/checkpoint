@@ -7,6 +7,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
+	"os"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -37,6 +38,19 @@ func IgnoreEOF() Option {
 // such as io.EOF.
 type Option = func(err error) error
 
+func relativeFile(file string) string {
+	dir, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+
+	path, err := filepath.Rel(dir, file)
+	if err != nil {
+		panic(err)
+	}
+	return path
+}
+
 // From just wraps an error by a new Checkpoint which adds some caller information to the error.
 // It returns nil, if err == nil.
 // You may use Options to change the resulting error for some specific input-errors.
@@ -60,7 +74,7 @@ func From(err error, options ...Option) error {
 		prev: nil,
 
 		callerOk: ok,
-		file:     filepath.Base(file),
+		file:     relativeFile(file),
 		line:     line,
 	}
 }
@@ -110,7 +124,7 @@ func Wrap(prev, err error, options ...Option) error {
 		prev: prev,
 
 		callerOk: ok,
-		file:     filepath.Base(file),
+		file:     relativeFile(file),
 		line:     line,
 	}
 }
